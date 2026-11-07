@@ -21,6 +21,14 @@ Zadaj svoje meno a **osobný kód**, ktorý dostaneš od lektorky (tvar `A4U-XXX
 Každý žiak má vlastný kód. Prístup platí **12 mesiacov od prvého spustenia**.
 Nemáš kód? Napíš na **anglina4ujazero@gmail.com** alebo sa opýtaj na hodine.
 
+## Android a iPhone (webová aplikácia)
+
+Otvor na telefóne **https://danielmatousek3-lab.github.io/anglina4u-aplikacia/** a zadaj osobný kód.
+
+- **Android (Chrome):** ťukni na **📲 Nainštalovať aplikáciu** (alebo ponuka ⋮ → **Pridať na plochu** / **Nainštalovať aplikáciu**). Ikona sa objaví na ploche, aplikácia funguje aj bez internetu.
+- **iPhone (Safari):** ťukni na **Zdieľať** (štvorec so šípkou) → **Pridať na plochu**.
+- Postup sa ukladá len v telefóne. Ak meníš telefón, v **Úspechoch** (ťukni na avatara hore) si ulož postup do súboru a na novom telefóne ho načítaj.
+
 ## Čo v aplikácii nájdeš
 - Cesta: 28 jednotiek od úplného začiatočníka (A0) po C1
 - Opakovanie slovíčok, Rozhovor, Čítanie, Slovník (794 hesiel), Gramatika A1–C1
