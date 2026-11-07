@@ -32,6 +32,44 @@ window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferr
 window.addEventListener("appinstalled", () => { const b = document.getElementById("pwa-install"); b && b.remove(); toast("✅ Aplikácia je nainštalovaná."); });
 setTimeout(installBtn, 1200);
 
+/* ---------- inštalačný panel: odkaz z webu vedie na ?install=android | iphone | mac ---------- */
+const UA = navigator.userAgent;
+const platform = () => /Android/i.test(UA) ? "android" : (/iPhone|iPad|iPod/i.test(UA) || (/Macintosh/i.test(UA) && navigator.maxTouchPoints > 1)) ? "ios" : /Macintosh/i.test(UA) ? "mac" : "other";
+const inApp = () => /FBAN|FBAV|Instagram|Messenger|Line\/|Snapchat|TikTok|MicroMessenger/i.test(UA);
+const safariDesktop = () => /Safari/i.test(UA) && !/Chrome|Chromium|Edg|OPR|Firefox/i.test(UA);
+const wantsInstall = (() => { try { return new URLSearchParams(location.search).get("install"); } catch (e) { return null; } })();
+let sheet = null, waitTimer = null;
+function sheetBody() {
+  const p = platform();
+  if (inApp()) return { msg: "Táto aplikácia sa inštaluje cez prehliadač. Ťukni na ⋮ alebo ··· v rohu a vyber **Otvoriť v prehliadači** (Chrome alebo Safari), potom sa sem vráť.", btn: false };
+  if (deferred) return { msg: "Ikona sa objaví na ploche a aplikácia pôjde aj bez internetu.", btn: true };
+  if (p === "ios") return { msg: "Na iPhone sa inštaluje cez Safari:\n**1.** Ťukni na **Zdieľať** (štvorec so šípkou nahor)\n**2.** Vyber **Pridať na plochu**\n**3.** Potvrď **Pridať**", btn: false };
+  if (p === "mac" && safariDesktop()) return { msg: "V Safari: z ponuky **Súbor** vyber **Pridať do Docku**. V Chrome alebo Edge sa objaví tlačidlo Nainštalovať v adresnom riadku.", btn: false };
+  if (p === "android") return { msg: "Ťukni na **⋮** vpravo hore a vyber **Nainštalovať aplikáciu** (alebo **Pridať na plochu**). Ak to tam nie je, otvor túto stránku v **Chrome**.", btn: false };
+  return { msg: "V Chrome alebo Edge ťukni na ikonu inštalácie v adresnom riadku, alebo v ponuke vyber **Nainštalovať Anglina4U**.", btn: false };
+}
+const md = t => esc(t).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+function renderSheet(waiting) {
+  if (!sheet) return;
+  const b = sheetBody();
+  sheet.querySelector(".ps-body").innerHTML = waiting && !b.btn ? "Pripravujem inštaláciu…" : md(b.msg);
+  const btn = sheet.querySelector(".ps-go"); btn.style.display = b.btn ? "" : "none";
+}
+function showSheet() {
+  if (sheet || isDesktopApp() || standalone()) return;
+  sheet = document.createElement("div"); sheet.id = "pwa-sheet";
+  sheet.innerHTML = `<div class="ps-card"><img src="assets/icon-192.png" alt="" class="ps-ico"><h2>Nainštaluj si aplikáciu</h2><p class="ps-body"></p><button class="btn ps-go" type="button">📲 Nainštalovať</button><button class="btn ghost ps-later" type="button">Pokračovať v prehliadači</button></div>`;
+  document.body.appendChild(sheet);
+  sheet.querySelector(".ps-later").onclick = () => { sheet.remove(); sheet = null; clearTimeout(waitTimer); };
+  sheet.querySelector(".ps-go").onclick = async () => { if (!deferred) return; deferred.prompt(); try { await deferred.userChoice; } catch (e) { } deferred = null; sheet && sheet.remove(); sheet = null; };
+  renderSheet(true);
+  waitTimer = setTimeout(() => renderSheet(false), 6000);
+}
+window.addEventListener("beforeinstallprompt", () => { if (sheet) renderSheet(false); });
+window.addEventListener("appinstalled", () => { if (sheet) { sheet.remove(); sheet = null; } });
+if (wantsInstall) setTimeout(showSheet, 600);
+
+
 /* ---------- malý prehľad XP v hornej lište (na mobile je pravý panel skrytý) ---------- */
 function stat() {
   const side = document.getElementById("side"); if (!side) return;

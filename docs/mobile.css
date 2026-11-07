@@ -59,3 +59,11 @@
   .pill{white-space:nowrap}
   .nav-i{flex:0 0 17.5%;min-width:0;padding:6px 3px;font-size:10.5px}
 }
+/* inštalačný panel */
+#pwa-sheet{position:fixed;inset:0;z-index:200;background:rgba(16,27,51,.55);display:flex;align-items:flex-end;justify-content:center;padding:0}
+#pwa-sheet .ps-card{background:#fff;width:min(520px,100%);border-radius:28px 28px 0 0;padding:26px 24px calc(24px + env(safe-area-inset-bottom));text-align:center;box-shadow:0 -20px 60px rgba(16,27,51,.3);display:flex;flex-direction:column;gap:14px}
+#pwa-sheet .ps-ico{width:84px;height:84px;margin:0 auto;border-radius:20px;border:1px solid var(--line)}
+#pwa-sheet h2{font-size:34px;margin:0}
+#pwa-sheet .ps-body{font-size:18px;line-height:1.5;color:var(--muted);text-align:left;margin:0}
+#pwa-sheet .ps-go{font-size:20px;padding:16px}
+@media (min-width:821px){#pwa-sheet{align-items:center}#pwa-sheet .ps-card{border-radius:28px}}
