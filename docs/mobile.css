@@ -1,0 +1,61 @@
+/* Mobilné zobrazenie (telefón do 820 px): horná lišta + spodné menu, jeden stĺpec */
+#mstat{display:none}
+#pwa-install{display:inline-block;color:var(--crimson);font-weight:600;text-decoration:none;margin-right:12px}
+@media (max-width:820px){
+  html,body{height:100%;overflow:hidden}
+  #app{height:100vh;height:100dvh;grid-template-columns:minmax(0,1fr);grid-template-rows:56px minmax(0,1fr)}
+  #right{display:none}
+  #side{padding:0 12px;gap:8px;backdrop-filter:none;justify-content:space-between}
+  .brand img{height:34px}
+  #mstat{display:flex;cursor:pointer;gap:10px;align-items:center;font-weight:700;font-size:15px;white-space:nowrap}
+  .side-foot{flex:none;font-size:12px;display:flex;align-items:center;gap:6px}
+  .side-foot a{white-space:nowrap}
+  #nav{display:flex!important;position:fixed;left:0;right:0;bottom:0;z-index:40;flex-direction:row;justify-content:flex-start;gap:2px;background:rgba(255,255,255,.97);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom));overflow-x:auto;scrollbar-width:none}
+  #nav::-webkit-scrollbar{display:none}
+  .nav-i{flex:0 0 auto;flex-direction:column;gap:2px;min-width:68px;padding:6px 8px;border-radius:12px;font-family:Inter,'Segoe UI',system-ui,sans-serif;font-size:11px;font-weight:600;line-height:1.15;text-align:center;white-space:normal;color:var(--muted)}
+  .nav-i span.i{display:block;font-size:21px;width:auto;line-height:1.1}
+  .nav-i.on{background:#F4EEF0;color:var(--crimson)}
+  #main{padding:16px 16px calc(92px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+  h1{font-size:38px} h2{font-size:28px} h3{font-size:22px}
+  .hero{flex-direction:column;align-items:flex-start;padding:8px 0 20px}
+  .hero img.bulldog{height:84px;align-self:center}
+  .hero p{font-size:16px}
+  .grid.g2,.grid.g3{grid-template-columns:1fr}
+  .plans{grid-template-columns:1fr}
+  .card{padding:16px}
+  .opts{grid-template-columns:1fr}
+  .opt{padding:14px;font-size:17px}
+  .prompt{font-size:28px}
+  .setup{margin:2vh auto}
+  .setup h1{font-size:42px}
+  .setup .opts{grid-template-columns:repeat(4,1fr)}
+  .seg{flex-wrap:wrap}
+  .de{gap:8px}
+  .de .dw{font-size:22px}
+  .de .btn{padding:8px 10px}
+  .lvl-div{margin:24px 0 14px}
+  #overlay .l-top{padding:12px 14px;gap:10px}
+  #overlay .l-body{padding:12px}
+  #overlay .foot{padding:12px 14px;min-height:84px;gap:10px}
+  #overlay .foot .btn{padding:14px 20px}
+  .sum{flex-wrap:wrap}
+  .sum div{min-width:0;flex:1 1 90px;padding:10px}
+  .big-e{font-size:72px}
+  .match{grid-template-columns:1fr 1fr}
+  input.input,textarea.input,select.input{font-size:16px}
+  .btn{font-size:16px}
+  .toast{left:12px;right:12px;top:auto;bottom:calc(88px + env(safe-area-inset-bottom));transform:none}
+}
+/* doladenie */
+#kp{color:var(--muted)}
+@media (hover:none){.opt kbd{display:none}}
+@media (max-width:820px){
+  .side-foot a:not(#pwa-install){font-size:12px!important;padding:8px 12px!important;line-height:1.15;white-space:normal;text-align:center;max-width:112px}
+  #pwa-install{position:fixed;right:12px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:45;background:var(--crimson);color:#fff!important;padding:10px 16px;border-radius:99px;font-size:13px;margin:0;box-shadow:var(--shadow);max-width:none!important}
+  #lc{font-size:21px!important;letter-spacing:.05em!important}
+  .brand img{height:30px}
+}
+@media (max-width:820px){
+  .pill{white-space:nowrap}
+  .nav-i{flex:0 0 17.5%;min-width:0;padding:6px 3px;font-size:10.5px}
+}
