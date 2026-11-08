@@ -215,3 +215,4 @@ table.gt tr:nth-child(even) td{background:#F8F9FC}
 .plan ul{margin:4px 0 8px 18px;padding:0;font-size:14px;flex:1}.plan li{margin:5px 0}
 .plan .btn{width:100%}
 @media (max-width:1300px){.plans{grid-template-columns:repeat(2,1fr)}}
+.input.bad{border-color:#d33!important;animation:shk .35s}@keyframes shk{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}

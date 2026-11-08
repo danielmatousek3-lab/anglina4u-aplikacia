@@ -35,9 +35,42 @@ function toast(t) { const el = $("#toast"); el.className = "toast"; el.textConte
 let voice = null;
 function pickVoice() { const v = speechSynthesis.getVoices(); voice = v.find(x => /en-GB/i.test(x.lang)) || v.find(x => /^en/i.test(x.lang)) || null; }
 if ("speechSynthesis" in window) { pickVoice(); speechSynthesis.onvoiceschanged = pickVoice; }
-function say(t, rate = .92) { if (!("speechSynthesis" in window)) return; speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = "en-GB"; if (voice) u.voice = voice; u.rate = rate; speechSynthesis.speak(u); }
+let ttsWarned = false;
+function noTts() { if (ttsWarned) return; ttsWarned = true; toast("🔇 Zvuk sa nepodarilo prehrať. Skontroluj hlasitosť médií a tichý režim. Na Androide: Nastavenia → Prevod textu na reč → nainštaluj angličtinu."); }
+/* Chrome na Androide zahodí hlas hneď po cancel(), preto krátka pauza; ak vybraný hlas zlyhá, skúsi sa bez neho */
+function say(t, rate = .92, noVoice = false) {
+  if (!("speechSynthesis" in window)) return noTts();
+  const busy = speechSynthesis.speaking || speechSynthesis.pending; if (busy) speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(t); u.lang = "en-GB"; if (voice && !noVoice) u.voice = voice; u.rate = rate;
+  let started = false; u.onstart = () => { started = true; };
+  u.onerror = e => { if (e.error === "canceled" || e.error === "interrupted") return; noVoice ? noTts() : say(t, rate, true); };
+  const run = () => { try { speechSynthesis.resume(); speechSynthesis.speak(u); } catch (e) { return noTts(); } setTimeout(() => { if (!started && !speechSynthesis.speaking && !speechSynthesis.pending) noVoice ? noTts() : say(t, rate, true); else if (!started && noVoice) setTimeout(() => { if (!started) noTts(); }, 1500); }, 1800); };
+  busy ? setTimeout(run, 90) : run();
+}
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-function listen(cb) { if (!SR) return cb(null); const r = new SR(); r.lang = "en-GB"; r.maxAlternatives = 3; r.onresult = e => cb([...e.results[0]].map(x => x.transcript)); r.onerror = () => cb(null); r.onend = () => { }; r.start(); return r; }
+/* cb(výsledky | null, dôvod chyby). Vždy sa zavolá práve raz, aj keď nik nič nepovie. */
+function listen(cb) {
+  if (!SR) return cb(null, "unsupported");
+  let done = false; const fin = (r, why) => { if (done) return; done = true; clearTimeout(t); cb(r, why); };
+  const r = new SR(); r.lang = "en-GB"; r.maxAlternatives = 3; r.interimResults = false; r.continuous = false;
+  const t = setTimeout(() => { try { r.abort(); } catch (e) { } fin(null, "no-speech"); }, 12000);
+  r.onresult = e => fin([...e.results[0]].map(x => x.transcript));
+  r.onerror = e => fin(null, e.error || "error");
+  r.onend = () => fin(null, "no-speech");
+  /* najprv si vypýtame mikrofón, aby sa na telefóne zobrazilo povolenie a hneď bolo jasné, či je zablokovaný */
+  const go = () => { try { r.start(); } catch (e) { fin(null, "error"); } };
+  if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) navigator.mediaDevices.getUserMedia({ audio: true }).then(s => { s.getTracks().forEach(x => x.stop()); go(); }).catch(() => fin(null, "not-allowed"));
+  else go();
+  return r;
+}
+const micMsg = why => ({
+  "not-allowed": "Mikrofón je zablokovaný. Povoľ ho: ťukni na zámok v adresnom riadku (alebo Nastavenia → Aplikácie → Anglina4U → Povolenia → Mikrofón) a skús znova.",
+  "service-not-allowed": "Mikrofón je zablokovaný. Povoľ ho v nastaveniach telefónu a skús znova.",
+  "audio-capture": "Mikrofón sa nenašiel alebo ho používa iná aplikácia.",
+  "network": "Rozpoznávanie reči potrebuje internet. Skontroluj pripojenie.",
+  "no-speech": "Nič som nepočul. Ťukni na 🎤 a povedz vetu hneď po pípnutí.",
+  "unsupported": "Rozpoznávanie reči tu nie je dostupné (použi Chrome).",
+}[why] || "Nepodarilo sa. Skús znova.");
 
 /* ---------- lekcie ---------- */
 function lessonsOf(u) {
@@ -179,7 +212,12 @@ function runSteps({ title, steps, onDone }) {
         box.innerHTML = `<div class="prompt">${esc(s.p)}</div><div style="text-align:center"><button class="speak-btn" id="sp">🔊</button> <button class="btn ghost" id="sl" style="margin-left:10px">🐢 Pomalšie</button></div><input class="input" id="in" autocomplete="off" placeholder="Napíš po anglicky…">`;
         $("#sp").onclick = () => say(s.listen); $("#sl").onclick = () => say(s.listen, .6); setTimeout(() => say(s.listen), 250);
         const inp = $("#in"); inp.focus(); inp.oninput = () => chk.disabled = !inp.value.trim();
-        const go = () => { if (inp.value.trim()) { const ok = norm(inp.value) === norm(s.a); feedback(ok, s.a, next); } };
+        let tries = 0, locked = false;
+        const go = () => {
+          if (locked || !inp.value.trim()) return; const ok = norm(inp.value) === norm(s.a);
+          if (!ok && ++tries < 2) { inp.classList.add("bad"); setTimeout(() => inp.classList.remove("bad"), 600); toast("Skoro. Oprav slovo a skús ešte raz ✏️"); inp.focus(); return; }
+          locked = true; inp.readOnly = true; feedback(ok, s.a, next);
+        };
         chk.onclick = go; inp.onkeydown = e => e.key === "Enter" && go();
       }
       if (s.k === "build") {
@@ -206,7 +244,7 @@ function runSteps({ title, steps, onDone }) {
         $("#sp").onclick = () => say(s.a); setTimeout(() => say(s.a), 250);
         const fin = ok => { feedback(ok, s.a, next); };
         chk.disabled = SR ? true : false; chk.textContent = "Povedal som to"; if (!SR) chk.onclick = () => fin(true);
-        $("#mic").onclick = () => { const m = $("#mic"); m.classList.add("rec"); $("#hint").textContent = "Počúvam…"; listen(r => { m.classList.remove("rec"); if (!r) { $("#hint").textContent = "Nepodarilo sa – skús znova, alebo vetu potvrď."; chk.disabled = false; chk.textContent = "Povedal som to"; chk.onclick = () => fin(true); return; } const t = norm(s.a).split(" "); const best = Math.max(...r.map(x => { const w = norm(x).split(" "); return t.filter(y => w.includes(y)).length / t.length; })); $("#hint").textContent = `Počul som: „${r[0]}“`; fin(best >= .7); }); };
+        $("#mic").onclick = () => { const m = $("#mic"); m.classList.add("rec"); $("#hint").textContent = "Počúvam…"; listen((r, why) => { m.classList.remove("rec"); if (!r) { $("#hint").textContent = micMsg(why) + " Alebo vetu potvrď tlačidlom."; chk.disabled = false; chk.textContent = "Povedal som to"; chk.onclick = () => fin(true); return; } const t = norm(s.a).split(" "); const best = Math.max(...r.map(x => { const w = norm(x).split(" "); return t.filter(y => w.includes(y)).length / t.length; })); $("#hint").textContent = `Počul som: „${r[0]}“`; fin(best >= .7); }); };
       }
     });
   }

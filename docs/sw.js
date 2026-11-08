@@ -1,5 +1,5 @@
-/* Anglina4U: offline vrstva (PWA). Generované skriptom tools/build-pwa.js, verzia 1.9.1. */
-const CACHE = "a4u-1.9.1";
+/* Anglina4U: offline vrstva (PWA). Generované skriptom tools/build-pwa.js, verzia 1.9.3. */
+const CACHE = "a4u-1.9.3";
 const FILES = [
  "./",
  "adj.js",

@@ -6,6 +6,21 @@ const standalone = () => (window.matchMedia && matchMedia("(display-mode: standa
 const isDesktopApp = () => !!window.a4uDesktop;
 const isIOS = () => /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+/* ---------- klávesnica na telefóne: výška okna sleduje viditeľnú plochu, pole sa vždy ukáže ---------- */
+(() => {
+  const vv = window.visualViewport; if (!vv) return;
+  const isField = el => el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA");
+  const sync = () => {
+    const kbd = innerHeight - vv.height > 120;
+    document.documentElement.style.setProperty("--vvh", vv.height + "px");
+    document.body.classList.toggle("kbd", kbd && isField(document.activeElement));
+    if (kbd && isField(document.activeElement)) document.activeElement.scrollIntoView({ block: "center" });
+  };
+  vv.addEventListener("resize", sync); vv.addEventListener("scroll", () => { if (document.body.classList.contains("kbd")) window.scrollTo(0, 0); });
+  document.addEventListener("focusin", e => { if (isField(e.target)) setTimeout(() => { sync(); e.target.scrollIntoView({ block: "center" }); }, 300); });
+  document.addEventListener("focusout", () => setTimeout(() => { if (!isField(document.activeElement)) document.body.classList.remove("kbd"); }, 100));
+})();
+
 /* ---------- offline vrstva ---------- */
 if ("serviceWorker" in navigator && /^https?:$/.test(location.protocol)) {
   navigator.serviceWorker.register("sw.js").then(reg => {
