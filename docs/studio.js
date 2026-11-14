@@ -37,6 +37,8 @@ const sha16 = (() => {
 // Na slovenskej klávesnici dá číselný rad bez Shiftu znaky +ľščťžýáíé: berieme ich ako číslice 1234567890.
 const SKDIG = { "+": "1", "ľ": "2", "š": "3", "č": "4", "ť": "5", "ž": "6", "ý": "7", "á": "8", "í": "9", "é": "0" };
 const normCode = v => v.toLowerCase().replace(/[+ľščťžýáíé]/g, ch => SKDIG[ch]).toUpperCase().replace(/[^A-Z0-9]/g, "");
+const rawCode = v => { let c = normCode(v); if (c.startsWith("A4U")) c = c.slice(3); return c.slice(0, 12); };
+const fmtCode = v => { const c = rawCode(v); return c ? c.match(/.{1,4}/g).join("-") : ""; };
 function parseCode(code) {
   const c = normCode(code);
   if (!/^A4U([A-Z0-9]{8}|[A-Z0-9]{12})$/.test(c)) return { err: "Kód má tvar A4U-XXXX-XXXX-XXXX." };
@@ -100,14 +102,14 @@ function activate() {
   $("#main").innerHTML = `<div class="setup" style="max-width:600px"><img src="assets/logo.png" style="width:240px;margin:0 auto">
   <h1>${expired ? "Prístup <em>skončil</em>" : "Ešte jeden <em>krok</em>"}</h1>
   <p class="muted" style="font-size:18px">${expired ? `Tvoj kód platil do ${idxLabel(S.lic.until)}. Nový kód ti dá lektorka ${esc(CFG.teacherName)}. Tvoj postup zostáva uložený.` : `Napíš kód z kartičky od lektorky.`}</p>
-  <div style="display:flex;align-items:center;justify-content:center;gap:0"><span style="font-size:26px;letter-spacing:.15em;font-weight:700;color:var(--muted,#5a6274);padding-right:4px">A4U-</span><input class="input" id="lc" placeholder="XXXX-XXXX-XXXX" maxlength="24" autocomplete="off" style="text-align:left;letter-spacing:.15em;font-size:26px;max-width:340px"></div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:0"><span style="font-size:26px;letter-spacing:.15em;font-weight:700;color:var(--muted,#5a6274);padding-right:4px">A4U-</span><input class="input" id="lc" placeholder="XXXX-XXXX-XXXX" maxlength="24" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="done" style="text-align:left;letter-spacing:.15em;font-size:26px;max-width:340px"></div>
   <p class="small" id="lm" style="min-height:22px;color:var(--red)">${esc(pendingMsg)}</p>
   <button class="btn" id="la" style="font-size:18px;padding:16px 40px">Hotovo →</button>
   <p class="small muted" style="margin-top:14px"><a href="#" id="kp">Nepíše klávesnica? Klikaj na znaky myšou</a></p>
   <div id="kpad" hidden style="display:none;flex-wrap:wrap;gap:6px;justify-content:center;max-width:460px;margin:8px auto 0"></div>
   <p class="small muted">Nevieš si rady? <a href="mailto:${esc(CFG.teacherEmail)}?subject=${encodeURIComponent("Kód do aplikácie Anglina4U")}">Napíš lektorke</a> alebo sa opýtaj na hodine.</p></div>`;
   let busy = false;
-  const go2 = async () => { if (busy) return; const r = parseCode("A4U" + $("#lc").value); if (r.err) { $("#lm").textContent = r.err; return; }
+  const go2 = async () => { if (busy) return; const r = parseCode("A4U" + rawCode($("#lc").value)); if (r.err) { $("#lm").textContent = r.err; return; }
     if (S.lic && S.lic.code === r.code) { if (!licFull()) { $("#lm").textContent = "Tento kód už vypršal. Požiadaj lektorku o nový kód."; return; } }
     else {
       busy = true; $("#la").disabled = true; $("#lm").style.color = "var(--muted,#5a6274)"; $("#lm").textContent = "Overujem kód…";
@@ -118,12 +120,13 @@ function activate() {
     }
     pendingMsg = ""; toast("✅ Hotovo. Vitaj!"); go("path"); };
   // klikacia klávesnica: keby klávesnica v okne nereagovala (alebo sa nedala vložiť)
-  const pad = $("#kpad"), lc = $("#lc"), setv = v => { lc.value = v; lc.oninput({ target: lc }); lc.focus(); };
+  const pad = $("#kpad"), lc = $("#lc"), setv = v => { lc.value = fmtCode(v); lc.focus(); };
   pad.innerHTML = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789".split("").map(c => `<button type="button" class="btn ghost" data-c="${c}" style="min-width:40px;padding:8px 0;font-size:17px">${c}</button>`).join("") + `<button type="button" class="btn ghost" data-c="<" style="min-width:84px;padding:8px 0;font-size:17px">← zmazať</button>`;
-  pad.onclick = e => { const b = e.target.closest("button"); if (!b) return; const c = b.dataset.c, cur = lc.value.replace(/[^A-Z0-9]/g, ""); setv(c === "<" ? cur.slice(0, -1) : cur + c); };
+  pad.onclick = e => { const b = e.target.closest("button"); if (!b) return; const c = b.dataset.c, cur = rawCode(lc.value); setv(c === "<" ? cur.slice(0, -1) : cur + c); };
   $("#kp").onclick = e => { e.preventDefault(); const on = pad.style.display === "none"; pad.style.display = on ? "flex" : "none"; };
   $("#la").onclick = go2; $("#lc").onkeydown = e => e.key === "Enter" && go2();
-  $("#lc").oninput = e => { let v = normCode(e.target.value); if (v.startsWith("A4U")) v = v.slice(3); v = v.slice(0, 12); e.target.value = v ? v.match(/.{1,4}/g).join("-") : ""; };
+  /* Pole sa počas písania NESMIE prepisovať (pomlčky, veľké písmená): na telefóne by sa tým zrušilo písanie aj mazanie. Upraví sa až po opustení poľa. */
+  $("#lc").onchange = () => { const v = rawCode($("#lc").value); if (v) $("#lc").value = fmtCode(v); };
   $("#lc").focus();
 }
 
